@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Translator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0f0f1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: #1a1a2e;
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 700px;
+            box-shadow: 0 0 40px rgba(100, 100, 255, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 30px;
+            color: #a78bfa;
+            letter-spacing: 1px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 140px;
+            background: #0f0f1a;
+            color: #e0e0e0;
+            border: 1px solid #2e2e4e;
+            border-radius: 10px;
+            padding: 14px;
+            font-size: 15px;
+            resize: none;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        textarea:focus { border-color: #a78bfa; }
+
+        .lang-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 16px 0;
+            flex-wrap: wrap;
+        }
+
+        label { color: #a78bfa; font-size: 14px; }
+
+        select {
+            background: #0f0f1a;
+            color: #e0e0e0;
+            border: 1px solid #2e2e4e;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        select:focus { border-color: #a78bfa; }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        #translateBtn {
+            background: #a78bfa;
+            color: #0f0f1a;
+        }
+
+        #translateBtn:hover { background: #8b5cf6; }
+
+        #speakBtn {
+            background: #1e1e3a;
+            color: #a78bfa;
+            border: 1px solid #a78bfa;
+        }
+
+        #speakBtn:hover { background: #2e2e4e; }
+
+        #copyBtn {
+            background: #1e1e3a;
+            color: #a78bfa;
+            border: 1px solid #a78bfa;
+        }
+
+        #copyBtn:hover { background: #2e2e4e; }
+
+        .result-box {
+            margin-top: 20px;
+            background: #0f0f1a;
+            border: 1px solid #2e2e4e;
+            border-radius: 10px;
+            padding: 16px;
+            min-height: 80px;
+            font-size: 15px;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+
+        .result-label {
+            font-size: 12px;
+            color: #a78bfa;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 Language Translator</h1>
+
+        <textarea id="inputText" placeholder="Enter text to translate..."></textarea>
+
+        <div class="lang-row">
+            <label>From:</label>
+            <select id="sourceLang">
+                <option value="auto">Auto Detect</option>
+                <option value="en">English</option>
+                <option value="hi">Hindi</option>
+                <option value="te">Telugu</option>
+            </select>
+
+            <label>To:</label>
+            <select id="targetLang">
+                <option value="en">English</option>
+                <option value="hi">Hindi</option>
+                <option value="te">Telugu</option>
+            </select>
+        </div>
+
+        <div class="btn-row">
+            <button id="translateBtn" onclick="translateText()">Translate</button>
+            <button id="speakBtn" onclick="speakText()">🔊 Speak</button>
+            <button id="copyBtn" onclick="copyText()">📋 Copy</button>
+        </div>
+
+        <div class="result-box">
+            <div class="result-label">Translation</div>
+            <div id="result">Your translation will appear here...</div>
+        </div>
+    </div>
+
+    <script>
+        async function translateText() {
+            const translateBtn = document.getElementById('translateBtn');
+            const text = document.getElementById('inputText').value;
+            const source = document.getElementById('sourceLang').value;
+            const target = document.getElementById('targetLang').value;
+
+            if (!text.trim()) return;
+
+            translateBtn.disabled = true;
+            translateBtn.style.opacity = '0.7';
+            document.getElementById('result').innerText = 'Translating...';
+
+            try {
+                const response = await fetch('/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, source, target })
+                });
+
+                const data = await response.json();
+                if (data.translated) {
+                    document.getElementById('result').innerText = data.translated;
+                } else if (data.error) {
+                    document.getElementById('result').innerText = data.error;
+                } else {
+                    document.getElementById('result').innerText = 'Translation failed. Please try again.';
+                }
+            } catch (e) {
+                document.getElementById('result').innerText = 'Translation failed. Please try again.';
+            } finally {
+                translateBtn.disabled = false;
+                translateBtn.style.opacity = '1';
+            }
+        }
+
+        function speakText() {
+            const text = document.getElementById('result').innerText;
+            if (!text || text === 'Your translation will appear here...' || text === 'Translating...') return;
+            const targetLang = document.getElementById('targetLang').value;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = targetLang;
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function copyText() {
+            const text = document.getElementById('result').innerText;
+            if (!text) return;
+            navigator.clipboard.writeText(text);
+            document.getElementById('copyBtn').innerText = '✅ Copied!';
+            setTimeout(() => (document.getElementById('copyBtn').innerText = '📋 Copy'), 2000);
+        }
+    </script>
+</body>
+</html>
